@@ -1,0 +1,112 @@
+import type { Course, Module } from '../../types';
+
+export const dummyCourses: Course[] = [
+  {
+    id: '1', slug: 'react-masterclass',
+    title: 'React Masterclass 2025',
+    description: 'Master React from basics to advanced hooks, context, and performance optimization.',
+    instructor: 'John Instructor', category: 'Web Development',
+    level: 'Intermediate', price: 49.99, isFree: false,
+    rating: 4.8, students: 1240, duration: 24, lessons: 68,
+    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
+    status: 'published', progress: 45,
+  },
+  {
+    id: '2', slug: 'python-for-beginners',
+    title: 'Python for Beginners',
+    description: 'Learn Python programming from scratch with hands-on projects.',
+    instructor: 'Sarah Smith', category: 'Programming',
+    level: 'Beginner', price: 0, isFree: true,
+    rating: 4.9, students: 3420, duration: 18, lessons: 52,
+    thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800',
+    status: 'published', progress: 90,
+  },
+  {
+    id: '3', slug: 'ui-ux-design',
+    title: 'UI/UX Design Fundamentals',
+    description: 'Design beautiful, user-friendly interfaces using Figma and modern design principles.',
+    instructor: 'Emma Wilson', category: 'Design',
+    level: 'Beginner', price: 39.99, isFree: false,
+    rating: 4.7, students: 890, duration: 15, lessons: 40,
+    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800',
+    status: 'published', progress: 20,
+  },
+  {
+    id: '4', slug: 'nodejs-api',
+    title: 'Node.js & REST API Development',
+    description: 'Build scalable backend APIs with Node.js, Express, and MongoDB.',
+    instructor: 'John Instructor', category: 'Web Development',
+    level: 'Intermediate', price: 59.99, isFree: false,
+    rating: 4.6, students: 720, duration: 22, lessons: 58,
+    thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
+    status: 'published',
+  },
+  {
+    id: '5', slug: 'data-science',
+    title: 'Data Science with Python',
+    description: 'Learn data analysis, visualization, and machine learning with Python.',
+    instructor: 'Dr. Alan Turing', category: 'Data Science',
+    level: 'Advanced', price: 79.99, isFree: false,
+    rating: 4.9, students: 1580, duration: 32, lessons: 85,
+    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+    status: 'published',
+  },
+  {
+    id: '6', slug: 'digital-marketing',
+    title: 'Digital Marketing Complete Course',
+    description: 'Master SEO, social media, ads, and email marketing strategies.',
+    instructor: 'Lisa Chen', category: 'Marketing',
+    level: 'Beginner', price: 29.99, isFree: false,
+    rating: 4.5, students: 2100, duration: 20, lessons: 55,
+    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
+    status: 'published',
+  },
+  {
+    id: '7', slug: 'mobile-app-react-native',
+    title: 'Mobile Apps with React Native',
+    description: 'Build cross-platform iOS and Android apps using React Native.',
+    instructor: 'John Instructor', category: 'Mobile Development',
+    level: 'Intermediate', price: 54.99, isFree: false,
+    rating: 4.7, students: 640, duration: 26, lessons: 62,
+    thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800',
+    status: 'pending',
+  },
+  {
+    id: '8', slug: 'cyber-security',
+    title: 'Cyber Security Essentials',
+    description: 'Learn ethical hacking, network security, and cryptography fundamentals.',
+    instructor: 'Mark Johnson', category: 'Security',
+    level: 'Advanced', price: 69.99, isFree: false,
+    rating: 4.8, students: 980, duration: 28, lessons: 70,
+    thumbnail: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800',
+    status: 'pending',
+  },
+];
+
+export const dummyModules: Module[] = [
+  {
+    id: 'm1', title: 'Getting Started',
+    lessons: [
+      { id: 'l1', title: 'Welcome to the Course', duration: 5, type: 'video', completed: true },
+      { id: 'l2', title: 'Setting Up Your Environment', duration: 12, type: 'video', completed: true },
+      { id: 'l3', title: 'Course Resources PDF', duration: 0, type: 'pdf', completed: true },
+    ],
+  },
+  {
+    id: 'm2', title: 'React Fundamentals',
+    lessons: [
+      { id: 'l4', title: 'JSX & Components', duration: 18, type: 'video', completed: true },
+      { id: 'l5', title: 'Props & State', duration: 22, type: 'video', completed: false },
+      { id: 'l6', title: 'Handling Events', duration: 15, type: 'video', completed: false },
+      { id: 'l7', title: 'Quiz: Fundamentals', duration: 10, type: 'quiz', completed: false },
+    ],
+  },
+  {
+    id: 'm3', title: 'Advanced Hooks',
+    lessons: [
+      { id: 'l8', title: 'useEffect Deep Dive', duration: 25, type: 'video', completed: false },
+      { id: 'l9', title: 'useContext & useReducer', duration: 20, type: 'video', completed: false },
+      { id: 'l10', title: 'Custom Hooks', duration: 18, type: 'video', completed: false },
+    ],
+  },
+];
