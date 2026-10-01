@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -10,23 +10,30 @@ import {
   Search,
   Edit2,
   Trash2,
+  Eye,
+  Award
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import api from '../../services/api';
 
+
 const links = [
   { to: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/instructor/create', label: 'Create Course', icon: PlusCircle },
   { to: '/instructor/courses', label: 'Manage Courses', icon: FileText },
+  { to: '/instructor/assignments', label: 'Assignments', icon: Award },
+  { to: '/instructor/submissions', label: 'Submissions', icon: FileText },   // ← NAYA
   { to: '/instructor/students', label: 'Students', icon: UserCheck },
 ];
 
 export default function ManageCourses() {
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
   const qc = useQueryClient();
 
+  // ─── Fetch my courses ───
   const { data: courses, isLoading } = useQuery({
     queryKey: ['my-courses'],
     queryFn: async () => {
@@ -35,6 +42,7 @@ export default function ManageCourses() {
     },
   });
 
+  // ─── Delete mutation ───
   const deleteMutation = useMutation({
     mutationFn: async (courseId: number) => {
       await api.delete(`/instructor/courses/${courseId}`);
@@ -49,13 +57,17 @@ export default function ManageCourses() {
     },
   });
 
-  const filteredCourses = courses?.filter((c: any) =>
-    c.title?.toLowerCase().includes(search.toLowerCase()) ||
-    c.category?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  // ─── Filter ───
+  const filteredCourses =
+    courses?.filter(
+      (c: any) =>
+        c.title?.toLowerCase().includes(search.toLowerCase()) ||
+        c.category?.toLowerCase().includes(search.toLowerCase())
+    ) || [];
 
-  const handleDelete = (courseId: number) => {
-    if (window.confirm('Are you sure you want to delete this course?')) {
+  // ─── Handlers ───
+  const handleDelete = (courseId: number, title: string) => {
+    if (window.confirm(`Delete "${title}"? This cannot be undone.`)) {
       deleteMutation.mutate(courseId);
     }
   };
@@ -94,7 +106,9 @@ export default function ManageCourses() {
             {search ? 'No courses match your search' : 'No courses yet'}
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            {search ? 'Try a different search term' : 'Create your first course to get started'}
+            {search
+              ? 'Try a different search term'
+              : 'Create your first course to get started'}
           </p>
           {!search && (
             <Link to="/instructor/create">
@@ -104,7 +118,7 @@ export default function ManageCourses() {
         </div>
       )}
 
-      {/* Course List */}
+      {/* Course Table */}
       {!isLoading && filteredCourses.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -122,6 +136,7 @@ export default function ManageCourses() {
             <tbody>
               {filteredCourses.map((c: any) => (
                 <tr key={c.id} className="border-t hover:bg-gray-50">
+                  {/* Course */}
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       {c.thumbnail ? (
@@ -136,38 +151,94 @@ export default function ManageCourses() {
                         </div>
                       )}
                       <div>
-                        <div className="font-medium text-gray-800">{c.title}</div>
+                        <div className="font-medium text-gray-800">
+                          {c.title}
+                        </div>
                         <div className="text-xs text-gray-500">{c.slug}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-gray-600">{c.category}</td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{c.level}</td>
+
+                  {/* Category */}
                   <td className="px-5 py-3 text-gray-600">
-                    {c.is_free ? 'Free' : `$${c.price}`}
+                    {c.category || '—'}
                   </td>
-                  <td className="px-5 py-3 text-gray-600">{c.students_count || 0}</td>
+
+                  {/* Level */}
+                  <td className="px-5 py-3 text-gray-600 capitalize">
+                    {c.level}
+                  </td>
+
+                  {/* Price */}
+                  <td className="px-5 py-3 text-gray-600">
+                    {c.is_free ? (
+                      <span className="text-green-600 font-medium">Free</span>
+                    ) : (
+                      <span>${c.price}</span>
+                    )}
+                  </td>
+
+                  {/* Students */}
+                  <td className="px-5 py-3 text-gray-600">
+                    {c.students_count || 0}
+                  </td>
+
+                  {/* Status */}
                   <td className="px-5 py-3">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      c.status === 'published' ? 'bg-green-100 text-green-700' :
-                      c.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        c.status === 'published'
+                          ? 'bg-green-100 text-green-700'
+                          : c.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : c.status === 'rejected'
+                          ? 'bg-red-100 text-red-700'
+                          : c.status === 'draft'
+                          ? 'bg-gray-100 text-gray-700'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
                       {c.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right">
+
+                  {/* Actions */}
+                  <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Link to={`/instructor/courses/${c.id}/edit`}>
-                        <button
-                          className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 transition"
-                          title="Edit"
-                        >
+                      {/* View */}
+                      <Link
+                        to={`/courses/${c.slug}`}
+                        title="View public page"
+                      >
+                        <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition">
+                          <Eye size={16} />
+                        </button>
+                      </Link>
+
+                      {/* Content */}
+                      <button
+                        onClick={() =>
+                          navigate(`/instructor/courses/${c.id}/content`)
+                        }
+                        className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 transition"
+                        title="Edit Content (Modules & Lessons)"
+                      >
+                        <FileText size={16} />
+                      </button>
+
+                      {/* Edit Details */}
+                      <Link
+                        to={`/instructor/courses/${c.id}/edit`}
+                        title="Edit Details"
+                      >
+                        <button className="p-2 rounded-lg hover:bg-indigo-50 text-indigo-600 transition">
                           <Edit2 size={16} />
                         </button>
                       </Link>
+
+                      {/* Delete */}
                       <button
-                        onClick={() => handleDelete(c.id)}
+                        onClick={() => handleDelete(c.id, c.title)}
                         className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition"
                         title="Delete"
                         disabled={deleteMutation.isPending}

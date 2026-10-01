@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   PlayCircle, FileText, CheckCircle, ChevronLeft, BookOpen,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Navbar from '../../components/layout/Navbar';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
@@ -40,125 +41,48 @@ interface CourseDetail {
   modules: Module[];
 }
 
-// ═══════════════════════════════════════════════════════════
-// API
-// ═══════════════════════════════════════════════════════════
-const courseService = {
-  // ✅ Fetch all courses (published only) — but WITH debug
-  getAll: async (): Promise<any[]> => {
-    const { data } = await api.get('/courses/');
-    return data;
-  },
-
-  // ✅ Fetch course details by slug (includes modules)
-  getBySlug: async (slug: string): Promise<CourseDetail> => {
-    const { data } = await api.get(`/courses/${slug}`);
-    return data;
-  },
-
-  // ✅ Fallback: fetch my enrollments to find enrolled course
-  getMyEnrollments: async (): Promise<any[]> => {
-    const { data } = await api.get('/enrollments/my');
-    return data;
-  },
-};
-
-// ═══════════════════════════════════════════════════════════
-// COMPONENT
-// ═══════════════════════════════════════════════════════════
 export default function CoursePlayer() {
   const { id } = useParams<{ id: string }>();
   const courseId = Number(id);
-  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
-    new Set()
-  );
+  const qc = useQueryClient();
 
-  // ✅ IMPROVED: Try multiple strategies to find the course
-  const {
-    data: course,
-    isLoading,
-    error,
-  } = useQuery({
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
+
+  // ═══════════════════════════════════════════════════════════
+  // FETCH COURSE DETAILS
+  // ═══════════════════════════════════════════════════════════
+  const { data: course, isLoading, error } = useQuery({
     queryKey: ['player-course', courseId],
     queryFn: async (): Promise<CourseDetail> => {
-      console.log('🎬 [Player] Loading course ID:', courseId);
+      const { data: courses } = await api.get('/courses/');
+      const found = courses.find((c: any) => Number(c.id) === courseId);
+      if (!found) throw new Error(`Course ID ${courseId} not found`);
 
-      if (!courseId || isNaN(courseId)) {
-        throw new Error('Invalid course ID in URL');
-      }
-
-      // ─── Strategy 1: Try direct from my enrollments ───
-      try {
-        const enrollments = await courseService.getMyEnrollments();
-        console.log('🎬 [Player] My enrollments:', enrollments);
-
-        const enrollment = enrollments.find(
-          (e: any) => Number(e.course_id) === courseId
-        );
-        console.log('🎬 [Player] Matching enrollment:', enrollment);
-
-        if (enrollment) {
-          // Try to get full details via slug
-          if (enrollment.course_slug) {
-            try {
-              const detail = await courseService.getBySlug(
-                enrollment.course_slug
-              );
-              console.log('🎬 [Player] Course detail via slug:', detail);
-              return detail;
-            } catch (err) {
-              console.warn(
-                '🎬 [Player] Slug fetch failed, using enrollment data only:',
-                err
-              );
-            }
-          }
-
-          // Fallback: build minimal course object from enrollment
-          return {
-            id: enrollment.course_id,
-            title: enrollment.course_title || 'Course',
-            slug: enrollment.course_slug || '',
-            description: '',
-            instructor_name: enrollment.instructor_name,
-            duration_hours: 0,
-            lessons_count: 0,
-            modules: [],
-          } as CourseDetail;
-        }
-      } catch (err) {
-        console.warn('🎬 [Player] Enrollment lookup failed:', err);
-      }
-
-      // ─── Strategy 2: Try from published courses list ───
-      try {
-        const courses = await courseService.getAll();
-        console.log('🎬 [Player] All published courses:', courses);
-
-        const found = courses.find(
-          (c: any) => Number(c.id) === courseId
-        );
-        console.log('🎬 [Player] Found in published:', found);
-
-        if (found) {
-          const detail = await courseService.getBySlug(found.slug);
-          return detail;
-        }
-      } catch (err) {
-        console.warn('🎬 [Player] Published lookup failed:', err);
-      }
-
-      // ─── Not found ───
-      throw new Error(
-        `Course ID ${courseId} not found in your enrollments or published courses`
-      );
+      const { data: detail } = await api.get(`/courses/${found.slug}`);
+      console.log('🎬 Course loaded:', detail.title, '| Modules:', detail.modules?.length);
+      return detail;
     },
     enabled: !!courseId && !isNaN(courseId),
-    retry: 1,
   });
 
-  // ✅ FIXED: useEffect instead of useState for side effects
+  // ═══════════════════════════════════════════════════════════
+  // FETCH MY ENROLLMENT (to know current progress)
+  // ═══════════════════════════════════════════════════════════
+  const { data: enrollment } = useQuery({
+    queryKey: ['my-enrollment-for-course', courseId],
+    queryFn: async () => {
+      const { data: enrollments } = await api.get('/enrollments/my');
+      const found = enrollments.find((e: any) => e.course_id === courseId);
+      console.log('📊 Enrollment loaded:', found);
+      return found || null;
+    },
+    enabled: !!courseId,
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // AUTO-SELECT FIRST LESSON
+  // ═══════════════════════════════════════════════════════════
   useEffect(() => {
     if (course && !activeLesson) {
       const firstLesson = course.modules?.[0]?.lessons?.[0];
@@ -168,15 +92,96 @@ export default function CoursePlayer() {
     }
   }, [course, activeLesson]);
 
-  const toggleComplete = (lessonId: number) => {
-    setCompletedLessons((prev) => {
-      const next = new Set(prev);
-      if (next.has(lessonId)) next.delete(lessonId);
-      else next.add(lessonId);
-      return next;
-    });
+  // ═══════════════════════════════════════════════════════════
+  // 🎯 MARK LESSON COMPLETE (with backend save)
+  // ═══════════════════════════════════════════════════════════
+  const completeLessonMutation = useMutation({
+    mutationFn: async (lessonId: number) => {
+      console.log('🎯 Marking lesson complete:', lessonId);
+
+      // Step 1: Get enrollment
+      const { data: enrollments } = await api.get('/enrollments/my');
+      const currentEnrollment = enrollments.find(
+        (e: any) => e.course_id === courseId
+      );
+
+      if (!currentEnrollment) {
+        throw new Error('You are not enrolled in this course');
+      }
+
+      console.log('🔍 Enrollment ID:', currentEnrollment.id);
+
+      // Step 2: Calculate new progress
+      const newCompleted = new Set(completedLessons);
+      newCompleted.add(lessonId);
+
+      const totalLessons = course?.modules?.reduce(
+        (sum, m) => sum + m.lessons.length,
+        0
+      ) || 1;
+
+      const newProgress = Math.round(
+        (newCompleted.size / totalLessons) * 100
+      );
+
+      console.log(`🔍 Progress: ${newCompleted.size} / ${totalLessons} = ${newProgress}%`);
+
+      // Step 3: Save to backend
+      const { data } = await api.put(
+        `/enrollments/${currentEnrollment.id}/progress`,
+        { progress: newProgress }
+      );
+
+      console.log('✅ Backend response:', data);
+
+      return { progress: newProgress, enrollment: data, lessonId };
+    },
+    onSuccess: (result) => {
+      console.log('🎉 Progress saved:', result.progress, 'Status:', result.enrollment.status);
+
+      // Update local state on success
+      setCompletedLessons((prev) => new Set([...prev, result.lessonId]));
+
+      if (result.progress >= 100) {
+        toast.success('🎉 Course Completed! Great job!', { duration: 5000 });
+      } else {
+        toast.success(`Progress: ${result.progress}%`);
+      }
+
+      // Invalidate all related queries
+      qc.invalidateQueries({ queryKey: ['my-enrollments'] });
+      qc.invalidateQueries({ queryKey: ['my-enrollment-for-course', courseId] });
+      qc.invalidateQueries({ queryKey: ['player-course', courseId] });
+      qc.invalidateQueries({ queryKey: ['my-courses'] });
+    },
+    onError: (err: any) => {
+      console.error('❌ Failed to save:', err);
+      toast.error(err.response?.data?.detail || err.message || 'Failed to save progress');
+    },
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // TOGGLE LESSON COMPLETE
+  // ═══════════════════════════════════════════════════════════
+  const toggleComplete = (lesson: Lesson) => {
+    const isCompleted = completedLessons.has(lesson.id);
+
+    if (isCompleted) {
+      // Unmark — only local state change
+      setCompletedLessons((prev) => {
+        const next = new Set(prev);
+        next.delete(lesson.id);
+        return next;
+      });
+    } else {
+      // Mark complete — call backend first, then update local on success
+      completeLessonMutation.mutate(lesson.id);
+    }
   };
 
+  // ═══════════════════════════════════════════════════════════
+  // COMPUTED VALUES
+  // ═══════════════════════════════════════════════════════════
   const totalLessons =
     course?.modules?.reduce((sum, m) => sum + m.lessons.length, 0) || 0;
   const completedCount = completedLessons.size;
@@ -207,30 +212,10 @@ export default function CoursePlayer() {
             <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
               <BookOpen size={32} />
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">
-              Course not found
-            </h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Course not found</h2>
             <p className="text-sm text-gray-500 mb-4">
-              {(error as any)?.message ||
-                `Unable to load course ID: ${courseId}`}
+              {(error as any)?.message || `Unable to load course ID: ${courseId}`}
             </p>
-
-            <div className="bg-gray-50 rounded-lg p-4 text-xs text-left mb-4 space-y-1">
-              <p>
-                <strong>Debug Info:</strong>
-              </p>
-              <p>
-                URL param (id): <code className="bg-white px-1">{id}</code>
-              </p>
-              <p>
-                Parsed courseId:{' '}
-                <code className="bg-white px-1">{courseId}</code>
-              </p>
-              <p>
-                Open console (F12) for detailed logs.
-              </p>
-            </div>
-
             <Link to="/student/courses">
               <Button>
                 <ChevronLeft size={16} /> Back to My Courses
@@ -272,28 +257,13 @@ export default function CoursePlayer() {
                 )}
                 <p className="text-lg font-medium">{activeLesson.title}</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {activeLesson.type.toUpperCase()} ·{' '}
-                  {activeLesson.duration_minutes}m
+                  {activeLesson.type.toUpperCase()} · {activeLesson.duration_minutes}m
                 </p>
-                {activeLesson.resource_url && (
-                  <a
-                    href={activeLesson.resource_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block mt-4 bg-indigo-600 px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
-                  >
-                    Open Resource
-                  </a>
-                )}
               </div>
             ) : (
               <div className="text-center p-6 text-gray-400">
                 <BookOpen size={48} className="mx-auto mb-3 opacity-50" />
-                <p>
-                  {course.modules?.length === 0
-                    ? 'No lessons available for this course yet'
-                    : 'Select a lesson to begin'}
-                </p>
+                <p>Select a lesson to begin</p>
               </div>
             )}
           </div>
@@ -307,35 +277,26 @@ export default function CoursePlayer() {
               </p>
 
               {activeLesson.content && (
-                <p className="text-sm text-gray-700 mb-4">
-                  {activeLesson.content}
-                </p>
+                <p className="text-sm text-gray-700 mb-4">{activeLesson.content}</p>
               )}
 
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  onClick={() => toggleComplete(activeLesson.id)}
-                  variant={
-                    completedLessons.has(activeLesson.id)
-                      ? 'secondary'
-                      : 'primary'
-                  }
-                >
-                  <CheckCircle size={16} />
-                  {completedLessons.has(activeLesson.id)
-                    ? 'Completed ✓'
-                    : 'Mark as Complete'}
-                </Button>
-              </div>
+              <Button
+                onClick={() => toggleComplete(activeLesson)}
+                loading={completeLessonMutation.isPending}
+                variant={completedLessons.has(activeLesson.id) ? 'secondary' : 'primary'}
+              >
+                <CheckCircle size={16} />
+                {completedLessons.has(activeLesson.id)
+                  ? 'Completed ✓'
+                  : 'Mark as Complete'}
+              </Button>
             </div>
           )}
 
           {/* Progress */}
           <div className="bg-white rounded-xl p-5 mt-6">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Course Progress
-              </span>
+              <span className="text-sm font-medium text-gray-700">Course Progress</span>
               <span className="text-sm text-gray-600">
                 {completedCount} / {totalLessons} lessons ({progress}%)
               </span>
@@ -349,7 +310,7 @@ export default function CoursePlayer() {
           </div>
         </div>
 
-        {/* ═══ RIGHT: Lesson Sidebar ═══ */}
+        {/* ═══ RIGHT: Sidebar ═══ */}
         <aside className="w-full lg:w-96 bg-white border-l border-gray-200 overflow-y-auto">
           <div className="p-5 border-b sticky top-0 bg-white z-10">
             <h3 className="font-bold text-gray-800">Course Content</h3>
@@ -382,28 +343,17 @@ export default function CoursePlayer() {
                         }`}
                       >
                         {l.type === 'video' && (
-                          <PlayCircle
-                            size={16}
-                            className="text-indigo-600 shrink-0"
-                          />
+                          <PlayCircle size={16} className="text-indigo-600 shrink-0" />
                         )}
                         {l.type === 'pdf' && (
-                          <FileText
-                            size={16}
-                            className="text-orange-500 shrink-0"
-                          />
+                          <FileText size={16} className="text-orange-500 shrink-0" />
                         )}
                         {l.type === 'quiz' && (
-                          <CheckCircle
-                            size={16}
-                            className="text-purple-600 shrink-0"
-                          />
+                          <CheckCircle size={16} className="text-purple-600 shrink-0" />
                         )}
                         <span
                           className={`flex-1 ${
-                            isActive
-                              ? 'text-indigo-700 font-medium'
-                              : 'text-gray-700'
+                            isActive ? 'text-indigo-700 font-medium' : 'text-gray-700'
                           }`}
                         >
                           {l.title}
@@ -412,10 +362,7 @@ export default function CoursePlayer() {
                           {l.duration_minutes}m
                         </span>
                         {isCompleted ? (
-                          <CheckCircle
-                            size={14}
-                            className="text-green-500 shrink-0"
-                          />
+                          <CheckCircle size={14} className="text-green-500 shrink-0" />
                         ) : (
                           <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0" />
                         )}
@@ -426,16 +373,6 @@ export default function CoursePlayer() {
               </ul>
             </div>
           ))}
-
-          {(!course.modules || course.modules.length === 0) && (
-            <div className="p-8 text-center text-gray-500 text-sm">
-              <BookOpen className="mx-auto mb-2 text-gray-300" size={32} />
-              <p>No lessons added yet</p>
-              <p className="text-xs mt-1 text-gray-400">
-                Instructor will add content soon
-              </p>
-            </div>
-          )}
         </aside>
       </div>
     </div>

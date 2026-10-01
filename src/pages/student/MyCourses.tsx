@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, GraduationCap, FileText, BarChart3,
-  Search, BookOpen, PlayCircle, CheckCircle, Clock,
+  Search, BookOpen, PlayCircle, CheckCircle, Clock, Trash2,
+  User as UserIcon,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Spinner from '../../components/common/Spinner';
 import Button from '../../components/common/Button';
@@ -16,7 +18,8 @@ const links = [
   { to: '/student/courses', label: 'My Courses', icon: GraduationCap },
   { to: '/student/assignments', label: 'Assignments', icon: FileText },
   { to: '/student/grades', label: 'Grades', icon: BarChart3 },
-];
+  { to: '/student/profile', label: 'Profile', icon: UserIcon },   // ← NAYA
+]
 
 const enrollmentService = {
   getMyEnrollments: async (): Promise<Enrollment[]> => {
@@ -87,7 +90,6 @@ export default function MyCourses() {
 
       {/* Toolbar */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-3 md:items-center">
-        {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -101,7 +103,6 @@ export default function MyCourses() {
           />
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
           {(['all', 'active', 'completed', 'dropped'] as Tab[]).map((t) => (
             <button
@@ -168,7 +169,9 @@ export default function MyCourses() {
   );
 }
 
-// ─── Sub Components ─────────────────────────
+// ═══════════════════════════════════════════════════════════
+// SUB COMPONENTS
+// ═══════════════════════════════════════════════════════════
 
 function StatBox({
   label,
@@ -193,9 +196,33 @@ function StatBox({
 }
 
 function CourseProgressCard({ enrollment }: { enrollment: Enrollment }) {
+  const qc = useQueryClient();
   const progress = enrollment.progress || 0;
 
-  const statusColors = {
+  const dropMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/enrollments/${enrollment.id}`);
+    },
+    onSuccess: () => {
+      toast.success('Course dropped');
+      qc.invalidateQueries({ queryKey: ['my-enrollments'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.detail || 'Failed to drop');
+    },
+  });
+
+  const handleDrop = () => {
+    if (
+      confirm(
+        `Drop "${enrollment.course_title}"? Your progress will be lost.`
+      )
+    ) {
+      dropMutation.mutate();
+    }
+  };
+
+  const statusColors: Record<string, string> = {
     active: 'bg-blue-100 text-blue-700',
     completed: 'bg-green-100 text-green-700',
     dropped: 'bg-gray-100 text-gray-700',
@@ -208,7 +235,9 @@ function CourseProgressCard({ enrollment }: { enrollment: Enrollment }) {
         <GraduationCap className="text-white opacity-90" size={48} />
         <div className="absolute top-3 right-3">
           <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[enrollment.status]}`}
+            className={`text-xs px-2 py-1 rounded-full font-medium ${
+              statusColors[enrollment.status] || statusColors.dropped
+            }`}
           >
             {enrollment.status}
           </span>
@@ -271,6 +300,16 @@ function CourseProgressCard({ enrollment }: { enrollment: Enrollment }) {
               </Button>
             </Link>
           )}
+
+          {/* Drop button */}
+          <button
+            onClick={handleDrop}
+            className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+            title="Drop course"
+            disabled={dropMutation.isPending}
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       </div>
     </div>

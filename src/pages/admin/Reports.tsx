@@ -1,6 +1,18 @@
 import {
-  LayoutDashboard, UserCog, CheckSquare, BarChart3,
-  Users, BookOpen, DollarSign, TrendingUp, Award, RefreshCw,
+  LayoutDashboard,
+  UserCog,
+  CheckSquare,
+  BarChart3,
+  Users,
+  BookOpen,
+  DollarSign,
+  TrendingUp,
+  Award,
+  RefreshCw,
+  GraduationCap,
+  FileText,
+  ClipboardCheck,
+  Bell,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -12,6 +24,12 @@ const links = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Users', icon: UserCog },
   { to: '/admin/approvals', label: 'Approvals', icon: CheckSquare },
+  { to: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { to: '/admin/enrollments', label: 'Enrollments', icon: GraduationCap },
+  { to: '/admin/assignments', label: 'Assignments', icon: ClipboardCheck },
+  { to: '/admin/submissions', label: 'Submissions', icon: FileText },
+  { to: '/admin/payments', label: 'Payments', icon: DollarSign },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
 ];
 

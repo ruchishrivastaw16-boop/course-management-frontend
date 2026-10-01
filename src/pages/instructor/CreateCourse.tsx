@@ -1,18 +1,18 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, FileText, UserCheck } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, UserCheck ,Award} from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import { useCreateCourse } from '../../hooks/useCourses';
-
 const links = [
   { to: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/instructor/create', label: 'Create Course', icon: PlusCircle },
   { to: '/instructor/courses', label: 'Manage Courses', icon: FileText },
+  { to: '/instructor/assignments', label: 'Assignments', icon: Award },
+  { to: '/instructor/submissions', label: 'Submissions', icon: FileText },   // ← NAYA
   { to: '/instructor/students', label: 'Students', icon: UserCheck },
 ];
-
 export default function CreateCourse() {
   const { register, handleSubmit, reset, watch, setValue } = useForm();
   const navigate = useNavigate();

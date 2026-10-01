@@ -1,4 +1,17 @@
-import { Users, BookOpen, DollarSign, AlertCircle, LayoutDashboard, UserCog, CheckSquare, BarChart3 } from 'lucide-react';
+import {
+  Users,
+  BookOpen,
+  DollarSign,
+  AlertCircle,
+  LayoutDashboard,
+  UserCog,
+  CheckSquare,
+  BarChart3,
+  GraduationCap,
+  FileText,
+  ClipboardCheck,
+  Bell,
+} from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import StatsCard from '../../components/charts/StatsCard';
 import Button from '../../components/common/Button';
@@ -9,6 +22,12 @@ const links = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Users', icon: UserCog },
   { to: '/admin/approvals', label: 'Approvals', icon: CheckSquare },
+  { to: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { to: '/admin/enrollments', label: 'Enrollments', icon: GraduationCap },
+  { to: '/admin/assignments', label: 'Assignments', icon: ClipboardCheck },
+  { to: '/admin/submissions', label: 'Submissions', icon: FileText },
+  { to: '/admin/payments', label: 'Payments', icon: DollarSign },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
 ];
 

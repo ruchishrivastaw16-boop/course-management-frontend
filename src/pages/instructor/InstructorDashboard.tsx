@@ -1,4 +1,5 @@
-import { BookOpen, Users, DollarSign, Star, LayoutDashboard, PlusCircle, FileText, UserCheck } from 'lucide-react';
+import { BookOpen, Users, DollarSign, Star, LayoutDashboard, PlusCircle, FileText,
+   UserCheck, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import StatsCard from '../../components/charts/StatsCard';
@@ -7,10 +8,13 @@ import Spinner from '../../components/common/Spinner';
 import { useMyCourses } from '../../hooks/useCourses';
 import { useAuth } from '../../hooks/useAuth';
 
+
 const links = [
   { to: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/instructor/create', label: 'Create Course', icon: PlusCircle },
   { to: '/instructor/courses', label: 'Manage Courses', icon: FileText },
+  { to: '/instructor/assignments', label: 'Assignments', icon: Award },
+  { to: '/instructor/submissions', label: 'Submissions', icon: FileText },   // ← NAYA
   { to: '/instructor/students', label: 'Students', icon: UserCheck },
 ];
 

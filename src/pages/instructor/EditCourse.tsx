@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard, PlusCircle, FileText, UserCheck, ArrowLeft, Save,
+  Award,
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/common/Input';
@@ -16,6 +17,8 @@ const links = [
   { to: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/instructor/create', label: 'Create Course', icon: PlusCircle },
   { to: '/instructor/courses', label: 'Manage Courses', icon: FileText },
+  { to: '/instructor/assignments', label: 'Assignments', icon: Award },
+  { to: '/instructor/submissions', label: 'Submissions', icon: FileText },   // ← NAYA
   { to: '/instructor/students', label: 'Students', icon: UserCheck },
 ];
 

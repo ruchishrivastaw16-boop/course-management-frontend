@@ -1,7 +1,22 @@
 import { useState } from 'react';
 import {
-  LayoutDashboard, UserCog, CheckSquare, BarChart3,
-  Search, Plus, Edit, Trash2, Ban, CheckCircle, X,
+  LayoutDashboard,
+  UserCog,
+  CheckSquare,
+  BarChart3,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Ban,
+  CheckCircle,
+  X,
+  BookOpen,
+  GraduationCap,
+  FileText,
+  ClipboardCheck,
+  DollarSign,
+  Bell,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -16,9 +31,14 @@ const links = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Users', icon: UserCog },
   { to: '/admin/approvals', label: 'Approvals', icon: CheckSquare },
+  { to: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { to: '/admin/enrollments', label: 'Enrollments', icon: GraduationCap },
+  { to: '/admin/assignments', label: 'Assignments', icon: ClipboardCheck },
+  { to: '/admin/submissions', label: 'Submissions', icon: FileText },
+  { to: '/admin/payments', label: 'Payments', icon: DollarSign },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
 ];
-
 // ─── API calls ─────────────────────────────────
 const userService = {
   getAll: async (): Promise<User[]> => {

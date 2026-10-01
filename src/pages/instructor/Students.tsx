@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, PlusCircle, FileText, UserCheck, Mail, Search } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, FileText, UserCheck, Mail, Search, Award } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
@@ -11,9 +11,10 @@ const links = [
   { to: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/instructor/create', label: 'Create Course', icon: PlusCircle },
   { to: '/instructor/courses', label: 'Manage Courses', icon: FileText },
+  { to: '/instructor/assignments', label: 'Assignments', icon: Award },
+  { to: '/instructor/submissions', label: 'Submissions', icon: FileText },   // ← NAYA
   { to: '/instructor/students', label: 'Students', icon: UserCheck },
 ];
-
 export default function Students() {
   const [search, setSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState<number | 'all'>('all');
